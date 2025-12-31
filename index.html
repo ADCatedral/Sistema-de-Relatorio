@@ -103,6 +103,9 @@ button:hover{opacity:.9}
   width:90px;
   text-align:right;
 }
+
+#btnFixas{background:#0d9488}
+#btnRelFixas{background:#7c3aed}
 </style>
 </head>
 
@@ -118,6 +121,8 @@ button:hover{opacity:.9}
   <button id="btnPdf">📄 PDF Oficial</button>
   <button id="btnFin">📊 PDF Financeiro</button>
   <button id="btnSaida">➖ Inserir Saída</button>
+  <button id="btnFixas">📌 Despesas Fixas</button>
+  <button id="btnRelFixas">🧾 Relatório Fixas</button>
   <button id="btnExport">📤 Exportar</button>
   <button id="btnImport">📥 Importar</button>
 </div>
@@ -140,9 +145,73 @@ const btnDel    = document.getElementById("btnDel");
 const btnPdf    = document.getElementById("btnPdf");
 const btnFin    = document.getElementById("btnFin");
 const btnSaida  = document.getElementById("btnSaida");
+const btnFixas  = document.getElementById("btnFixas");
+const btnRelFixas = document.getElementById("btnRelFixas");
 const btnExport = document.getElementById("btnExport");
 const btnImport = document.getElementById("btnImport");
 const fileImport= document.getElementById("fileImport");
+
+/* === DESPESAS FIXAS (ISOLADO) === */
+const FIXAS_KEY = "DESPESAS_FIXAS_V1";
+
+function getFixas(){
+  try{ return JSON.parse(localStorage.getItem(FIXAS_KEY) || "[]"); }
+  catch(e){ return []; }
+}
+
+function saveFixas(arr){
+  localStorage.setItem(FIXAS_KEY, JSON.stringify(arr));
+}
+
+btnFixas.onclick = ()=>{
+  const nome = prompt("Descrição da despesa fixa:");
+  if(!nome) return;
+
+  const valorStr = prompt("Valor:");
+  const valor = parseFloat(valorStr.replace(",", "."));
+  if(isNaN(valor)) return alert("Valor inválido");
+
+  const lista = getFixas();
+  lista.push({ nome, valor });
+  saveFixas(lista);
+
+  alert("Despesa fixa salva.");
+};
+
+btnRelFixas.onclick = ()=>{
+  const lista = getFixas();
+  if(!lista.length) return alert("Nenhuma despesa fixa cadastrada.");
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  let y = 20;
+  doc.setFontSize(14);
+  doc.text("Relatório Financeiro – Despesas Fixas", 14, y);
+  y += 10;
+
+  doc.setFontSize(10);
+  doc.text("Descrição", 14, y);
+  doc.text("Valor (R$)", 190, y, {align:"right"});
+  y += 6;
+
+  let total = 0;
+  lista.forEach(d=>{
+    total += d.valor;
+    doc.text(d.nome, 14, y);
+    doc.text(d.valor.toFixed(2), 190, y, {align:"right"});
+    y += 6;
+    if(y > 280){ doc.addPage(); y = 20; }
+  });
+
+  y += 8;
+  doc.setFontSize(11);
+  doc.text("Total:", 14, y);
+  doc.text(total.toFixed(2), 190, y, {align:"right"});
+
+  doc.save("despesas_fixas.pdf");
+};
+
 </script>
 
 
@@ -244,7 +313,10 @@ function authMakeOverlay(){
         width:100% !important;
         box-sizing:border-box !important;
       }
-    </style>
+    
+#btnFixas{background:#0d9488}
+#btnRelFixas{background:#7c3aed}
+</style>
 
     <!-- Caixa do login -->
     <div style="
